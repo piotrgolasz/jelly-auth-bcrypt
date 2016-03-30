@@ -82,7 +82,7 @@ class Model_Auth_User extends Jelly_Model {
 	 */
 	public function unique_key($value)
 	{
-		return Valid::email($value) ? 'email' : 'username';
+		return 'username';
 	}
 
 	/**
