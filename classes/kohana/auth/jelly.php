@@ -285,7 +285,19 @@ class Kohana_Auth_Jelly extends Auth {
 			return FALSE;
 		}
 
-		return ($this->hash($password) === $user->password);
+		return password_verify($password, $user->password);
+	}
+
+	/**
+	 * Hash the password
+	 * @param String $str
+	 * @return String
+	 */
+	public function hash($str)
+	{
+		return password_hash($str, PASSWORD_BCRYPT, array(
+			'cost' => $this->_config['cost']
+		));
 	}
 
 }
