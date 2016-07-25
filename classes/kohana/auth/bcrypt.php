@@ -10,7 +10,11 @@ defined('SYSPATH') or die('No direct access allowed.');
  * @copyright  (c) 2011 creatoro
  * @license    http://creativecommons.org/licenses/by-sa/3.0/legalcode
  */
-class Kohana_Auth_Jelly extends Auth {
+class Kohana_Auth_Bcrypt extends Auth {
+
+	const REMEMBER_TOKEN = 'remember-token';
+	const PASSWORD_RESET = 'password-reset';
+	const API_TOKEN = 'api-token';
 
 	/**
 	 * Checks if a session is active.
@@ -84,7 +88,7 @@ class Kohana_Auth_Jelly extends Auth {
 		}
 
 		// If the passwords match, perform a login
-		if ($user->loaded() AND password_verify($password, $user->password) AND $user->has('roles', Jelly::factory('role')->get_role('login')))
+		if (password_verify($password, $user->password) AND $user->loaded() AND $user->has('roles', Jelly::factory('role')->get_role('login')))
 		{
 			if ($remember === TRUE)
 			{
@@ -93,6 +97,7 @@ class Kohana_Auth_Jelly extends Auth {
 					'user_id' => $user->id,
 					'expires' => time() + $this->_config['lifetime'],
 					'user_agent' => sha1(Request::$user_agent),
+					'type' => self::REMEMBER_TOKEN
 				);
 
 				// Create a new autologin token
