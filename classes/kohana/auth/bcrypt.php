@@ -104,7 +104,7 @@ class Kohana_Auth_Bcrypt extends Auth {
 				$token = Jelly::factory('user_token')->create_token($data);
 
 				// Set the autologin cookie
-				Cookie::set('authautologin', $token->token, $this->_config['lifetime']);
+				Cookie::set('authautologin', $token->token, strtotime('+1 day') - time());
 			}
 
 			// Finish the login
