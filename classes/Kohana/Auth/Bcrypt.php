@@ -1,4 +1,7 @@
-<?php defined('SYSPATH') or die('No direct access allowed.');
+<?php
+
+defined('SYSPATH') or die('No direct access allowed.');
+
 /**
  * Jelly Auth driver.
  *
@@ -7,7 +10,17 @@
  * @copyright  (c) 2011 creatoro
  * @license    http://creativecommons.org/licenses/by-sa/3.0/legalcode
  */
-class Kohana_Auth_Jelly extends Auth {
+class Kohana_Auth_Bcrypt extends Auth {
+
+	public function __construct($config = array())
+	{
+		if (!isset($config['cost']) or ! is_numeric($config['cost']) or $config['cost'] < 10)
+		{
+			throw new Kohana_Exception(__CLASS__ . ' cost parameter must be interger >=10');
+		}
+
+		parent::__construct($config);
+	}
 
 	/**
 	 * Checks if a session is active.
@@ -20,13 +33,13 @@ class Kohana_Auth_Jelly extends Auth {
 		// Get the user from the session
 		$user = $this->get_user();
 
-		if ( ! $user)
+		if (!$user)
 			return FALSE;
 
 		if ($user instanceof Model_User AND $user->loaded())
 		{
 			// If we don't have a roll no further checking is needed
-			if ( ! $role)
+			if (!$role)
 				return TRUE;
 
 			if (is_array($role))
@@ -40,12 +53,12 @@ class Kohana_Auth_Jelly extends Auth {
 			}
 			else
 			{
-				if ( ! is_object($role))
+				if (!is_object($role))
 				{
 					// Load the role
 					$roles = Jelly::factory('role')->get_role($role);
 
-					if ( ! $roles->loaded())
+					if (!$roles->loaded())
 						return FALSE;
 				}
 			}
@@ -64,13 +77,7 @@ class Kohana_Auth_Jelly extends Auth {
 	 */
 	protected function _login($user, $password, $remember)
 	{
-		if (is_string($password))
-		{
-			// Create a hashed password
-			$password = $this->hash($password);
-		}
-
-		if ( ! is_object($user))
+		if (!is_object($user))
 		{
 			$username = $user;
 
@@ -79,14 +86,21 @@ class Kohana_Auth_Jelly extends Auth {
 		}
 
 		// If the passwords match, perform a login
-		if ($user->has('roles', Jelly::factory('role')->get_role('login')) AND $user->password === $password)
+		if ($user->has('roles', Jelly::factory('role')->get_role('login')) and password_verify($password, $user->password))
 		{
+			if (password_needs_rehash($user->password, PASSWORD_BCRYPT, [
+						'cost' => $this->_config['cost']
+					]))
+			{
+				$user->password = $password;
+				$user->save();
+			}
 			if ($remember === TRUE)
 			{
 				// Token data
 				$data = array(
-					'user_id'    => $user->id,
-					'expires'    => time() + $this->_config['lifetime'],
+					'user_id' => $user->id,
+					'expires' => time() + $this->_config['lifetime'],
 					'user_agent' => sha1(Request::$user_agent),
 				);
 
@@ -117,7 +131,7 @@ class Kohana_Auth_Jelly extends Auth {
 	 */
 	public function force_login($user, $mark_session_as_forced = FALSE)
 	{
-		if ( ! is_object($user))
+		if (!is_object($user))
 		{
 			$username = $user;
 
@@ -182,7 +196,7 @@ class Kohana_Auth_Jelly extends Auth {
 	{
 		$user = parent::get_user($default);
 
-		if ( ! $user)
+		if (!$user)
 		{
 			// check for "remembered" login
 			$user = $this->auto_login();
@@ -214,8 +228,7 @@ class Kohana_Auth_Jelly extends Auth {
 			if ($token->loaded() AND $logout_all)
 			{
 				Jelly::factory('user')->delete_tokens($token->user->id);
-			}
-			elseif ($token->loaded())
+			} elseif ($token->loaded())
 			{
 				$token->delete();
 			}
@@ -232,7 +245,7 @@ class Kohana_Auth_Jelly extends Auth {
 	 */
 	public function password($user)
 	{
-		if ( ! is_object($user))
+		if (!is_object($user))
 		{
 			$username = $user;
 
@@ -267,10 +280,19 @@ class Kohana_Auth_Jelly extends Auth {
 	{
 		$user = $this->get_user();
 
-		if ( ! $user)
+		if (!$user)
 			return FALSE;
 
-		return ($this->hash($password) === $user->password);
+		return password_verify($password, $user->password);
 	}
 
-} // End Auth Jelly
+	public function hash($str)
+	{
+		return password_hash($str, PASSWORD_BCRYPT, [
+			'cost' => $this->_config['cost']
+		]);
+	}
+
+}
+
+// End Auth Jelly
