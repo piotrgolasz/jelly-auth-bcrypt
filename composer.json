@@ -1,0 +1,19 @@
+{
+  "name": "piotrgolasz/jelly-auth-bcrypt",
+  "description": "Bcrypt auth for Kohana/Koseven",
+  "license": "BSD",
+  "keywords": [
+    "koseven",
+    "auth",
+    "bcrypt"
+  ],
+  "authors": [
+    {
+      "name": "Piotr Gołasz",
+      "role": "developer"
+    }
+  ],
+  "require": {
+    "php": ">=7.0",
+  }
+}
